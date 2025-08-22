@@ -1,21 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Paths
+# ─────────────────────────────
+# Settings
+# ─────────────────────────────
 BASE_DIR="${BASE_DIR:-$HOME/vpn}"
 CHECKOUT_DIR="$BASE_DIR/algo-75cfeab"
 REPO_URL="https://github.com/trailofbits/algo.git"
 PINNED_COMMIT="75cfeab24a077b141f3c91341fc1546004c48d15"
-
 export DEBIAN_FRONTEND=noninteractive
 
-# Ensure deps
+# ─────────────────────────────
+# 1. Install system deps
+# ─────────────────────────────
 sudo apt-get update -y
-sudo apt-get install -y --no-install-recommends git python3-virtualenv zip
+sudo apt-get install -y --no-install-recommends git python3-virtualenv zip curl
 
-# Fetch pinned commit into ~/vpn/algo-75cfeab (reuse if present)
+# ─────────────────────────────
+# 2. Checkout Algo pinned
+# ─────────────────────────────
 mkdir -p "$BASE_DIR"
 if [[ ! -d "$CHECKOUT_DIR/.git" ]]; then
+  echo "[*] Fetching Algo pinned @ $PINNED_COMMIT"
   mkdir -p "$CHECKOUT_DIR"
   cd "$CHECKOUT_DIR"
   git init -q
@@ -26,20 +32,49 @@ else
   cd "$CHECKOUT_DIR"
 fi
 
-# >>> EXACT chain you requested, with one essential add (setuptools) before requirements <<<
-python3 -m virtualenv --python="$(command -v python3)" .env &&
-  source .env/bin/activate &&
-  python3 -m pip install -U pip virtualenv &&
-  python3 -m pip install -U "setuptools<81" wheel &&
-  python3 -m pip install -r requirements.txt
-
-# Make sure Ansible uses the venv’s Python (prevents pkg_resources errors)
+# ─────────────────────────────
+# 3. Virtualenv setup
+# ─────────────────────────────
+echo "[*] Setting up Python venv"
+python3 -m virtualenv --python="$(command -v python3)" .env
+# shellcheck disable=SC1091
+source .env/bin/activate
+python3 -m pip install -U pip virtualenv
+python3 -m pip install -U "setuptools<81" wheel
+python3 -m pip install -r requirements.txt
 export ANSIBLE_PYTHON_INTERPRETER="$PWD/.env/bin/python3"
 
-# Run Algo
-./algo
+# ─────────────────────────────
+# 4. Auto-generate config.cfg
+# ─────────────────────────────
+echo "[*] Writing config.cfg with defaults"
+PUBLIC_IP=$(curl -s ifconfig.me || echo "127.0.0.1")
+cat > config.cfg <<EOF
+users:
+  - vpnuser
 
-# Zip config into config/vpn.zip (create folder if missing)
+dns:
+  - 1.1.1.1
+  - 8.8.8.8
+
+wireguard_port: 51820
+algo_server_ip: $PUBLIC_IP
+endpoint: $PUBLIC_IP
+
+EOF
+
+# ─────────────────────────────
+# 5. Run Algo non-interactive
+# ─────────────────────────────
+echo "[*] Running Algo unattended"
+ANSIBLE_DISPLAY_SKIPPED_HOSTS=false \
+ANSIBLE_RETRY_FILES_ENABLED=false \
+./algo --non-interactive
+
+# ─────────────────────────────
+# 6. Zip config
+# ─────────────────────────────
+echo "[*] Zipping config → config/vpn.zip"
 mkdir -p config
 ( cd config && zip -r vpn.zip . -x vpn.zip )
-echo "Created: $CHECKOUT_DIR/config/vpn.zip"
+echo "Done: $(realpath config/vpn.zip || echo config/vpn.zip)"
