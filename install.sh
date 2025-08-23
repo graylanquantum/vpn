@@ -64,7 +64,7 @@ pip install -r requirements.txt
 export ANSIBLE_PYTHON_INTERPRETER="$PWD/.env/bin/python3"
 
 # ─────────────────────────────
-# 5. Run Algo with hard-coded answers
+# 5. Run Algo with automated inputs
 # ─────────────────────────────
 PUBLIC_IP=$(curl -4 -s ifconfig.me || dig +short myip.opendns.com @resolver1.opendns.com || echo "127.0.0.1")
 echo "[*] Detected public IPv4: $PUBLIC_IP"
@@ -91,6 +91,14 @@ sleep 2
 send "\r"
 sleep 2
 send "\r"
+
+# two ENTERs for double "Proceed?" prompts
+sleep 2
+send "\r"
+sleep 2
+send "\r"
+
+# now IP
 sleep 2
 send "$PUBLIC_IP\r"
 sleep 2
