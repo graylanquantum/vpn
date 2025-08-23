@@ -5,7 +5,7 @@ BASE_DIR="$HOME"
 ALGO_DIR="$BASE_DIR/algo"
 ZIP_URL="https://github.com/trailofbits/algo/archive/75cfeab24a077b141f3c91341fc1546004c48d15.zip"
 ZIP_FILE="$BASE_DIR/algo.zip"
-EXPECTED_SHA="f47dd2636c0d0ba7ed642ce6c2f3251beeeff8771018bee9d303e6c0bbbe8e5"
+EXPECTED_SHA="0f47dd2636c0d0ba7ed642ce6c2f3251beeeff8771018bee9d303e6c0bbbe8e5"
 
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a   # auto restart services without dialog
