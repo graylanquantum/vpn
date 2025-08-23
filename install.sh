@@ -64,20 +64,16 @@ echo "[*] Running Algo installer with automated inputs"
 expect <<EOF
 set timeout -1
 spawn ./algo
-expect "What provider would you like to use?"
 send "12\r"
-expect "Do you want to install an ad blocker?"
 send "\r"
-expect "Do you want to install the VPN on the local machine?"
 send "\r"
-expect "Do you want to allow your clients to use DNS over HTTPS?"
 send "\r"
-expect "Do you want to install a WireGuard VPN server?"
 send "y\r"
-expect "Do you want to retain the keys (keys will not be generated again)?"
 send "\r"
-expect "Enter the public IP address of your server"
+send "\r"
+send "\r"
 send "$PUBLIC_IP\r"
+send "\r"
 expect eof
 EOF
 
