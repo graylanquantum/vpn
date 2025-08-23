@@ -8,7 +8,7 @@ BASE_DIR="$HOME"
 ALGO_DIR="$BASE_DIR/algo"
 ZIP_URL="https://github.com/trailofbits/algo/archive/75cfeab24a077b141f3c91341fc1546004c48d15.zip"
 ZIP_FILE="$BASE_DIR/algo.zip"
-EXPECTED_SHA="f47dd2636c0d0ba7ed642ce6c2f3251beeeff8771018bee9d303e6c0bbbe8e5"
+EXPECTED_SHA="0f47dd2636c0d0ba7ed642ce6c2f3251beeeff8771018bee9d303e6c0bbbe8e5"
 
 # Make apt non-interactive + auto-restart services
 export DEBIAN_FRONTEND=noninteractive
@@ -64,7 +64,7 @@ pip install -r requirements.txt
 export ANSIBLE_PYTHON_INTERPRETER="$PWD/.env/bin/python3"
 
 # ─────────────────────────────
-# 5. Run Algo with automated inputs
+# 5. Run Algo with automated inputs (slow mode)
 # ─────────────────────────────
 PUBLIC_IP=$(curl -4 -s ifconfig.me || dig +short myip.opendns.com @resolver1.opendns.com || echo "127.0.0.1")
 echo "[*] Detected public IPv4: $PUBLIC_IP"
@@ -73,35 +73,45 @@ expect <<EOF
 set timeout -1
 spawn ./algo
 
-sleep 2
+sleep 5
 send "12\r"
-sleep 2
+sleep 5
 send "\r"
-sleep 2
+sleep 5
 send "\r"
-sleep 2
+sleep 5
 send "\r"
-sleep 2
+sleep 5
 send "y\r"
-sleep 2
+sleep 5
 send "\r"
-sleep 2
+sleep 5
 send "\r"
-sleep 2
+sleep 5
 send "\r"
-sleep 2
+sleep 5
 send "\r"
 
 # two ENTERs for double "Proceed?" prompts
-sleep 2
+sleep 5
 send "\r"
-sleep 2
+sleep 5
 send "\r"
 
-# now IP
-sleep 2
+# first IP prompt
+sleep 5
 send "$PUBLIC_IP\r"
-sleep 2
+sleep 5
+send "\r"
+
+# login user prompt → just ENTER (default)
+sleep 5
+send "\r"
+
+# confirm server IP/domain
+sleep 5
+send "$PUBLIC_IP\r"
+sleep 5
 send "\r"
 
 expect eof
