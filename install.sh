@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ─────────────────────────────
-# Settings
-# ─────────────────────────────
 BASE_DIR="$HOME"
 ALGO_DIR="$BASE_DIR/algo"
 ZIP_URL="https://github.com/trailofbits/algo/archive/75cfeab24a077b141f3c91341fc1546004c48d15.zip"
 ZIP_FILE="$BASE_DIR/algo.zip"
 EXPECTED_SHA="f47dd2636c0d0ba7ed642ce6c2f3251beeeff8771018bee9d303e6c0bbbe8e5"
+
 export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a   # auto restart services without dialog
 
 # ─────────────────────────────
-# 1. Install system deps
+# 1. Install deps
 # ─────────────────────────────
 sudo apt-get update -y
 sudo apt-get install -y --no-install-recommends \
@@ -21,66 +20,64 @@ sudo apt-get install -y --no-install-recommends \
 # ─────────────────────────────
 # 2. Download Algo pinned zip
 # ─────────────────────────────
-echo "[*] Downloading Algo pinned zip"
 wget -qO "$ZIP_FILE" "$ZIP_URL"
-
-echo "[*] Verifying SHA256 checksum"
 DOWNLOADED_SHA=$(sha256sum "$ZIP_FILE" | awk '{print $1}')
 if [[ "$DOWNLOADED_SHA" != "$EXPECTED_SHA" ]]; then
-  echo "ERROR: SHA256 checksum mismatch!"
-  echo "Expected: $EXPECTED_SHA"
-  echo "Got:      $DOWNLOADED_SHA"
+  echo "ERROR: SHA256 mismatch!"
   exit 1
 fi
-echo "[*] Checksum OK"
 
-# ─────────────────────────────
-# 3. Extract & rename
-# ─────────────────────────────
 rm -rf "$ALGO_DIR"
 unzip -q "$ZIP_FILE" -d "$BASE_DIR"
 mv "$BASE_DIR"/algo-* "$ALGO_DIR"
-
 cd "$ALGO_DIR"
 
 # ─────────────────────────────
-# 4. Virtualenv setup
+# 3. Python venv
 # ─────────────────────────────
-echo "[*] Setting up Python venv"
 python3 -m virtualenv --python="$(command -v python3)" .env
 source .env/bin/activate
-python3 -m pip install -U pip virtualenv
-python3 -m pip install -U "setuptools<81" wheel
-python3 -m pip install -r requirements.txt
+pip install -U pip virtualenv
+pip install -U "setuptools<81" wheel
+pip install -r requirements.txt
 export ANSIBLE_PYTHON_INTERPRETER="$PWD/.env/bin/python3"
 
 # ─────────────────────────────
-# 5. Automate Algo install via expect
+# 4. Run Algo with automatic answers
 # ─────────────────────────────
 PUBLIC_IP=$(curl -s ifconfig.me || echo "127.0.0.1")
 echo "[*] Detected public IP: $PUBLIC_IP"
-echo "[*] Running Algo installer with automated inputs"
 
 expect <<EOF
 set timeout -1
 spawn ./algo
+# Give it a second before typing
+sleep 2
 send "12\r"
+sleep 2
 send "\r"
+sleep 2
 send "\r"
+sleep 2
 send "\r"
+sleep 2
 send "y\r"
+sleep 2
 send "\r"
+sleep 2
 send "\r"
+sleep 2
 send "\r"
+sleep 2
 send "$PUBLIC_IP\r"
+sleep 2
 send "\r"
 expect eof
 EOF
 
 # ─────────────────────────────
-# 6. Zip config
+# 5. Zip configs
 # ─────────────────────────────
-echo "[*] Zipping config → config/vpn.zip"
 mkdir -p config
 ( cd configs && zip -r ../config/vpn.zip . -x vpn.zip )
 echo "Done: $(realpath config/vpn.zip || echo config/vpn.zip)"
